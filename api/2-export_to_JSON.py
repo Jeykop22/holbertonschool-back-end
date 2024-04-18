@@ -1,51 +1,37 @@
 #!/usr/bin/python3
-"""script that, using this REST API, for a given employee ID,
-returns information about his/her TODO list progress."""
+"""
+A Python script that, using the JSONPlaceholder REST API
+retrieves information about a user's TODO list progress.
+"""
+
 import json
 import requests
-import sys
+from sys import argv
 
 
-def get_employee_todo_list_progress(employee_id):
-    """_summary_
+def get_todo_progress(employee_id):
+    """Retrieve and print the employee's TODO list progress."""
 
-    Args:
-        employee_id (_type_): _description_
-    """
-    base_url = "https://jsonplaceholder.typicode.com"
-    user_url = "{}/users/{}".format(base_url, employee_id)
-    todo_url = "{}/todos?userId={}".format(base_url, employee_id)
+    users_api_url = f"https://jsonplaceholder.typicode.com/users/{employee_id}"
+    get_users_api_url = requests.get(users_api_url).json()
 
-    # userdata for get employee name with id:
-    user_return = requests.get(user_url)
-    user_data = user_return.json()
-    user_name = user_data.get('username')
+    users_todo_api_url = \
+        f"https://jsonplaceholder.typicode.com/users/{employee_id}/todos"
+    get_users_todo_api_url = requests.get(users_todo_api_url).json()
 
-    # Task data for get number of done tasks and total number of tasks
-    todo_return = requests.get(todo_url)
-    todo_data = todo_return.json()
+    completed_tasks = []
+    for task in get_users_todo_api_url:
+        completed_tasks.append({
+            "task": task['title'],
+            "completed": task['completed'],
+            "username": get_users_api_url["username"]
+        })
 
-    # Create JSON data format
-    task_list = []
-    for task in todo_data:
-        task_title = task.get('title')
-        task_status = task.get('completed')
-        task_dict = {"task": task_title,
-                     "completed": task_status,
-                     "username": user_name}
-        task_list.append(task_dict)
-
-    json_data = {str(employee_id): task_list}
-
-    # Write to JSON file
-    json_filename = f'{employee_id}.json'
-    with open(json_filename, mode='w') as json_file:
-        json.dump(json_data, json_file)
+    output_filename = f"{employee_id}.json"
+    with open(output_filename, "w") as fd:
+        json.dump({employee_id: completed_tasks}, fd)
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python3 0-gather_data_from_an_API.py <employee_id>")
-        sys.exit(1)
-    employee_id = int(sys.argv[1])
-    get_employee_todo_list_progress(employee_id)
+if __name__ == "__main__":
+    employee_id = int(argv[1])
+    get_todo_progress(employee_id)

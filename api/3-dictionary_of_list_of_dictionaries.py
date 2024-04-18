@@ -1,51 +1,51 @@
 #!/usr/bin/python3
-"""script that, using this REST API, for a given employee ID,
-returns information about his/her TODO list progress."""
+"""
+A Python script that retrieves information about all users' TODO list progress
+using the JSONPlaceholder REST API and exports the data in JSON format.
+"""
+
 import json
 import requests
-import sys
 
 
-def get_employee_todo_list_progress():
-    """_summary_
+def get_todo_progress():
+    """Retrieve and organize all users' TODO list progress."""
 
-    Args:
-        employee_id (_type_): _description_
-    """
-    base_url = "https://jsonplaceholder.typicode.com"
-    # Fetch all users
-    users_response = requests.get(f'{base_url}/users')
-    users_data = users_response.json()
-
-    # Create a dictionary to store tasks for each user
-    all_tasks = {}
-
+    # Fetch information about all users
+    users_api_url = "https://jsonplaceholder.typicode.com/users"
+    users_data = requests.get(users_api_url).json()
+    # Dictionary to store all users' tasks
+    all_employees_data = {}
+    # Fetch tasks for each user and organize them in the required format
     for user in users_data:
-        user_id = user.get('id')
-        user_name = user.get('username')
+        user_id = user["id"]
+        username = user["username"]
+        todos_api_url = \
+            f"https://jsonplaceholder.typicode.com/users/{user_id}/todos"
+        user_tasks = requests.get(todos_api_url).json()
 
-        # Fetch user's TODO list
-        todos_return = requests.get(f'{base_url}/todos?userId={user_id}')
-        todo_data = todos_return.json()
+        # List to store tasks for this user
+        user_task_list = []
 
-        # Create JSON data format
-        task_list = []
-        for task in todo_data:
-            task_title = task.get('title')
-            task_status = task.get('completed')
-            task_dict = {"username": user_name,
-                         "task": task_title,
-                         "completed": task_status
-                         }
-            task_list.append(task_dict)
+        # Organize tasks in the required format
+        for task in user_tasks:
+            user_task_list.append({
+                "username": username,
+                "task": task["title"],
+                "completed": task["completed"]
+            })
 
-            all_tasks[str(user_id)] = task_list
+        # Add tasks for this user to the dictionary
+        all_employees_data[user_id] = user_task_list
 
-    # Write to JSON file
-    json_filename = 'todo_all_employees.json'
-    with open(json_filename, mode='w') as json_file:
-        json.dump(all_tasks, json_file)
+    return all_employees_data
 
 
-if __name__ == '__main__':
-    get_employee_todo_list_progress()
+if __name__ == "__main__":
+    # Retrieve all users' tasks
+    all_tasks = get_todo_progress()
+
+    # Write the data to JSON file
+    output_filename = "todo_all_employees.json"
+    with open(output_filename, "w") as fd:
+        json.dump(all_tasks, fd)

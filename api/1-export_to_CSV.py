@@ -1,48 +1,41 @@
 #!/usr/bin/python3
-"""script that, using this REST API, for a given employee ID,
-returns information about his/her TODO list progress."""
+"""
+A Python script that, using the JSONPlaceholder REST API
+retrieves information about a user's TODO list progress.
+"""
+
 import csv
 import requests
-import sys
+from sys import argv
 
 
-def get_employee_todo_list_progress(employee_id):
-    """_summary_
+def get_todo_progress(employee_id):
+    """Retrieve and print the employee's TODO list progress."""
 
-    Args:
-        employee_id (_type_): _description_
-    """
-    base_url = "https://jsonplaceholder.typicode.com"
-    user_url = "{}/users/{}".format(base_url, employee_id)
-    todo_url = "{}/todos?userId={}".format(base_url, employee_id)
+    users_api_url = f"https://jsonplaceholder.typicode.com/users/{employee_id}"
 
-    # userdata for get employee name with id:
-    user_return = requests.get(user_url)
-    user_data = user_return.json()
-    user_name = user_data.get('username')
+    get_users_api_url = requests.get(users_api_url).json()
 
-    # Task data for get number of done tasks and total number of tasks
-    todo_return = requests.get(todo_url)
-    todo_data = todo_return.json()
+    users_todo_api_url = \
+        f"https://jsonplaceholder.typicode.com/users/{employee_id}/todos"
 
-    # Write to CSV file
-    csv_filename = f'{employee_id}.csv'
-    with open(csv_filename, mode='w', newline='') as csv_file:
-        csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+    get_users_todo_api_url = requests.get(users_todo_api_url).json()
 
-        for task in todo_data:
-            task_completed_status = 'True' if task.get('completed')\
-                                    else 'False'
-            formatted_row = [employee_id,
-                             user_name,
-                             task_completed_status,
-                             task.get('title')]
-            csv_writer.writerow(formatted_row)
+    task_completed = [task_check for task_check in get_users_todo_api_url]
+
+    name_employee = get_users_api_url['username']
+
+    csv_filename = f"{employee_id}.csv"
+    csv_file = open(csv_filename, "w", newline="")
+    csv_writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+
+    for task in task_completed:
+        csv_writer.writerow([employee_id, name_employee,
+                            task['completed'], task['title']])
+
+    csv_file.close()
 
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print("Usage: python3 0-gather_data_from_an_API.py <employee_id>")
-        sys.exit(1)
-    employee_id = int(sys.argv[1])
-    get_employee_todo_list_progress(employee_id)
+if __name__ == "__main__":
+    employee_id = int(argv[1])
+    get_todo_progress(employee_id)
